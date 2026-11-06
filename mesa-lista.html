@@ -1,0 +1,870 @@
+<title>Mesa Lista</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: sticky tab bar over a working canvas; kitchen-ticket ("comanda") motif for budgets, floor plan for the room. */
+:root{
+  --bg:#F1F3ED; --surface:#FFFFFF; --sunken:#E6EAE0; --line:#D2D8CA; --ink:#17201A; --muted:#5A665D;
+  --olive:#2E4A34; --on-olive:#FFFFFF; --olive-soft:#DCE6D8;
+  --saffron:#C98A12; --saffron-soft:#F6E8C6; --saffron-ink:#6A4600;
+  --chili:#B0381E; --chili-soft:#F6DCD4;
+  --sky:#2B5884; --sky-soft:#DBE5F0;
+  --ok:#287045; --ok-soft:#D5EBDC;
+  --shadow:0 1px 2px rgba(23,32,26,.06),0 10px 30px rgba(23,32,26,.10);
+  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,"Segoe UI",sans-serif;
+  --f-body:"Instrument Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1411; --surface:#171E19; --sunken:#1F2821; --line:#304036; --ink:#E6EBE3; --muted:#98A59A;
+  --olive:#93C09B; --on-olive:#0D1A10; --olive-soft:#1E3324;
+  --saffron:#E8B24C; --saffron-soft:#3A2E15; --saffron-ink:#F3CB78;
+  --chili:#EC7B62; --chili-soft:#3D211B;
+  --sky:#86B3DE; --sky-soft:#1B2A39;
+  --ok:#6DC48F; --ok-soft:#183223;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.45);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1411; --surface:#171E19; --sunken:#1F2821; --line:#304036; --ink:#E6EBE3; --muted:#98A59A;
+  --olive:#93C09B; --on-olive:#0D1A10; --olive-soft:#1E3324;
+  --saffron:#E8B24C; --saffron-soft:#3A2E15; --saffron-ink:#F3CB78;
+  --chili:#EC7B62; --chili-soft:#3D211B;
+  --sky:#86B3DE; --sky-soft:#1B2A39;
+  --ok:#6DC48F; --ok-soft:#183223;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.45);
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h2{font-size:clamp(22px,3vw,30px);font-weight:800;letter-spacing:-.02em}
+h3{font-size:17px;font-weight:700}
+p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--saffron);outline-offset:2px}
+.mono,.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.eyebrow{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+/* header */
+.top{background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:14px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand svg{flex:none}
+.brand b{font-family:var(--f-display);font-size:22px;font-weight:800;letter-spacing:-.03em;display:block;line-height:1}
+.brand span{font-size:13px;color:var(--muted)}
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;padding-block:6px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;border:0;background:none;padding:8px 12px;border-radius:8px;cursor:pointer;color:var(--muted);font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px}
+.tab:hover{background:var(--sunken);color:var(--ink)}
+.tab.on{background:var(--olive);color:var(--on-olive)}
+.badge{font-family:var(--f-mono);font-size:11px;min-width:19px;height:19px;padding:0 5px;border-radius:10px;display:inline-grid;place-items:center;background:var(--chili);color:#fff}
+.tab.on .badge{background:var(--saffron);color:#1b1404}
+
+main{padding-block:24px 48px;display:grid;gap:24px}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px 20px;flex-wrap:wrap}
+.head p{color:var(--muted);margin-top:4px;max-width:62ch}
+
+/* controls */
+.btn{border:1px solid var(--line);background:var(--surface);padding:8px 14px;border-radius:9px;cursor:pointer;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink);white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--olive);border-color:var(--olive);color:var(--on-olive)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.warn{background:var(--saffron);border-color:var(--saffron);color:#1b1404}
+.btn.danger{color:var(--chili)}
+.btn.danger[data-armed]{background:var(--chili);border-color:var(--chili);color:#fff}
+.btn.sm{padding:5px 10px;font-size:13px;border-radius:7px}
+.btn.ghost{border-color:transparent;background:none}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.field{display:grid;gap:5px;min-width:0}
+.field label{font-size:12.5px;font-weight:600;color:var(--muted)}
+input[type=text],input[type=tel],input[type=date],input[type=number],select,textarea{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:38px}
+textarea{resize:vertical;min-height:60px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600;cursor:pointer}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* pills */
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.p-pendiente{background:var(--saffron-soft);color:var(--saffron-ink)}
+.p-confirmada{background:var(--sky-soft);color:var(--sky)}
+.p-atendida{background:var(--ok-soft);color:var(--ok)}
+.p-cancelada{background:var(--sunken);color:var(--muted)}
+.fc{font-family:var(--f-mono);font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px}
+.fc.ok{background:var(--ok-soft);color:var(--ok)} .fc.warn{background:var(--saffron-soft);color:var(--saffron-ink)} .fc.bad{background:var(--chili-soft);color:var(--chili)}
+.tag{font-size:12px;padding:1px 8px;border-radius:6px;background:var(--sunken);color:var(--muted);font-weight:600}
+.tag.alert{background:var(--chili-soft);color:var(--chili)}
+
+/* surfaces */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;min-width:0}
+.panel > h3{margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:20px}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:760px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:2px;min-width:0}
+.kpi .v{font-family:var(--f-display);font-size:clamp(24px,3.4vw,34px);font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.1;overflow-wrap:anywhere}
+.kpi .s{font-size:13px;color:var(--muted)}
+.kpi.hero{background:var(--olive);border-color:var(--olive);color:var(--on-olive)}
+.kpi.hero .s,.kpi.hero .eyebrow{color:var(--on-olive);opacity:.8}
+
+/* lists */
+.list{display:grid}
+.item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 4px;border-top:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;width:100%}
+.item:first-child{border-top:0}
+.item:hover{background:var(--sunken)}
+.time{font-family:var(--f-mono);font-weight:700;font-size:18px;min-width:60px}
+.time small{display:block;font-size:11px;color:var(--muted);font-weight:500}
+.item .who{font-weight:700}
+.item .meta{font-size:13px;color:var(--muted);display:flex;gap:4px 10px;flex-wrap:wrap}
+.item .right{text-align:right;display:grid;gap:4px;justify-items:end}
+.empty{padding:22px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+
+.alerts{display:grid;gap:10px}
+.alert{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border-radius:12px;background:var(--sunken)}
+.alert .ic{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-family:var(--f-mono);font-weight:700}
+.alert.red .ic{background:var(--chili);color:#fff}
+.alert.amber .ic{background:var(--saffron);color:#1b1404}
+.alert.blue .ic{background:var(--sky);color:var(--surface)}
+.alert.green .ic{background:var(--ok);color:var(--surface)}
+.alert b{display:block}
+.alert span{font-size:13px;color:var(--muted)}
+
+/* chart */
+.bars{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:6px;align-items:end;height:170px;padding-top:18px;border-bottom:1px solid var(--line);background:repeating-linear-gradient(to top,transparent 0,transparent 37px,var(--line) 37px,var(--line) 38px)}
+.bar{position:relative;background:var(--olive);border-radius:5px 5px 0 0;min-height:2px;cursor:pointer;border:0;padding:0}
+.bar.today{background:var(--saffron)}
+.bar.zero{background:var(--line)}
+.bar i{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font:700 11px var(--f-mono);font-style:normal;color:var(--ink);padding-bottom:3px}
+.bar-labels{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:6px;font-size:11px;color:var(--muted);text-align:center;margin-top:6px;line-height:1.2}
+.bar-labels b{display:block;color:var(--ink);font-family:var(--f-mono)}
+
+/* agenda */
+.days{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.day{flex:none;width:84px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 6px;cursor:pointer;text-align:center;display:grid;gap:1px}
+.day .dn{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+.day .dd{font-family:var(--f-display);font-size:24px;font-weight:800;line-height:1.1}
+.day .dc{font-size:11.5px;color:var(--muted)}
+.day.on{background:var(--olive);border-color:var(--olive);color:var(--on-olive)}
+.day.on .dn,.day.on .dc{color:var(--on-olive);opacity:.85}
+.day .dot{width:6px;height:6px;border-radius:50%;background:var(--saffron);margin:2px auto 0}
+.day .dot.none{background:transparent}
+
+/* floor plan */
+.scroll-x{overflow-x:auto;border-radius:14px}
+.plan{position:relative;aspect-ratio:16/10;min-width:600px;border-radius:14px;border:1px solid var(--line);
+  background-color:var(--sunken);background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:28px 28px;background-position:-1px -1px}
+.zone{position:absolute;border:1.5px dashed var(--muted);border-radius:12px;opacity:.55;pointer-events:none}
+.zone span{position:absolute;top:6px;left:10px;font:700 11px var(--f-mono);letter-spacing:.12em;text-transform:uppercase}
+.tbl{position:absolute;transform:translate(-50%,-50%);display:grid;place-content:center;gap:0;text-align:center;border:2px solid var(--ok);background:var(--surface);color:var(--ink);cursor:pointer;padding:4px;line-height:1.15;transition:transform .15s}
+.tbl:hover{transform:translate(-50%,-50%) scale(1.05)}
+.tbl.round{border-radius:50%;aspect-ratio:1}
+.tbl.rect{border-radius:12px;height:22%}
+.tbl b{font:700 14px var(--f-mono)}
+.tbl small{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.tbl.busy{border-color:var(--saffron);background:var(--saffron-soft)}
+.tbl.busy small{color:var(--saffron-ink);font-weight:600}
+.tbl.served{border-color:var(--olive);background:var(--olive);color:var(--on-olive)}
+.tbl.served small{color:var(--on-olive);opacity:.85}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:6px;vertical-align:-1px;border:2px solid}
+
+/* tables */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle}
+td.n,th.n{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover{background:var(--sunken)}
+tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ink)}
+.meter{height:8px;border-radius:4px;background:var(--sunken);overflow:hidden;min-width:80px}
+.meter i{display:block;height:100%;background:var(--ok);border-radius:4px}
+.meter.low i{background:var(--chili)}
+td input[type=number]{width:96px;min-height:32px;padding:4px 8px;font-family:var(--f-mono)}
+
+/* menu */
+.dishes{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.dish{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:10px;align-content:start;min-width:0}
+.dish .top2{display:flex;justify-content:space-between;gap:10px;align-items:start}
+.dish h3{font-size:18px}
+.dish .figs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px;background:var(--sunken);border-radius:10px}
+.dish .figs div{display:grid;min-width:0}
+.dish .figs span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.dish .figs b{font-family:var(--f-mono);font-size:14px}
+.recipe{font-size:13px;display:grid;gap:3px}
+.recipe div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dotted var(--line);padding-bottom:3px}
+.recipe div span:last-child{font-family:var(--f-mono);color:var(--muted);white-space:nowrap}
+.hint{font-size:13px;padding:8px 10px;border-radius:8px;background:var(--chili-soft);color:var(--chili)}
+.price-in{display:flex;align-items:center;gap:6px}
+.price-in input{width:110px;font-family:var(--f-mono)}
+
+/* shopping */
+.sup{display:grid;gap:0}
+.sup-h{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.buy{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:10px 2px;border-top:1px solid var(--line)}
+.buy input[type=checkbox]{width:22px;height:22px;accent-color:var(--olive);cursor:pointer}
+.buy .q{font:700 16px var(--f-mono);white-space:nowrap}
+.buy .nm{font-weight:600}
+.buy .sub{font-size:12.5px;color:var(--muted)}
+.buy .pp{display:grid;gap:2px;justify-items:end}
+.buy .pp input{width:104px;min-height:32px;padding:4px 8px;font-family:var(--f-mono);font-size:13px}
+.buy.done .nm,.buy.done .q{text-decoration:line-through;color:var(--muted)}
+@media (max-width:560px){.buy{grid-template-columns:auto minmax(0,1fr) auto}.buy .pp{grid-column:2 / -1;justify-items:start;grid-template-columns:auto auto;align-items:center;gap:8px}}
+.progress{height:10px;background:var(--sunken);border-radius:5px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--olive);transition:width .3s}
+
+/* reminders */
+.rem{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 4px;border-top:1px solid var(--line)}
+.rem:first-of-type{border-top:0}
+.rem .when{font:700 13px var(--f-mono);padding:6px 8px;border-radius:8px;background:var(--sunken);text-align:center;min-width:74px}
+.rem.now .when{background:var(--chili);color:#fff}
+.rem.sent .when{background:var(--ok-soft);color:var(--ok)}
+.msg{font-size:13px;color:var(--muted);margin-top:4px;padding:8px 10px;border-left:3px solid var(--line);background:var(--sunken);border-radius:0 8px 8px 0}
+@media (max-width:640px){.rem{grid-template-columns:auto minmax(0,1fr)}.rem .acts{grid-column:1 / -1}}
+
+/* modal */
+.overlay{position:fixed;inset:0;z-index:20;background:rgba(10,14,11,.55);display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));overflow-y:auto}
+.modal{background:var(--bg);border-radius:18px;width:min(760px,100%);box-shadow:var(--shadow);max-height:100%;overflow-y:auto;display:grid}
+.m-head{display:flex;justify-content:space-between;align-items:start;gap:12px;padding:20px 22px 14px;border-bottom:1px solid var(--line);background:var(--surface);position:sticky;top:0;z-index:1}
+.m-body{padding:18px 22px 22px;display:grid;gap:18px}
+.x{border:0;background:var(--sunken);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;flex:none}
+.fgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fgrid .full{grid-column:1 / -1}
+@media (max-width:560px){.fgrid{grid-template-columns:1fr}}
+.err{background:var(--chili-soft);color:var(--chili);padding:10px 12px;border-radius:10px;font-weight:600;font-size:14px}
+.steppers{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.step{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.step.has{border-color:var(--olive);box-shadow:inset 3px 0 0 var(--olive)}
+.step .nm{font-size:14px;font-weight:600;line-height:1.2}
+.step .nm small{display:block;font-weight:500;color:var(--muted);font-family:var(--f-mono);font-size:12px}
+.step .ctl{display:flex;align-items:center;gap:6px}
+.step .ctl button{width:28px;height:28px;border-radius:7px;border:1px solid var(--line);background:var(--sunken);cursor:pointer;font-weight:700}
+.step .ctl b{font-family:var(--f-mono);min-width:20px;text-align:center}
+.summary{display:flex;gap:8px 20px;flex-wrap:wrap;padding:12px 14px;border-radius:12px;background:var(--olive);color:var(--on-olive);font-size:14px}
+.summary b{font-family:var(--f-mono)}
+.dl{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.dl div{display:grid;gap:2px}
+.dl b{font-weight:600}
+.callout{padding:10px 12px;border-radius:10px;font-size:14px}
+.callout.red{background:var(--chili-soft);color:var(--chili)}
+.callout.amber{background:var(--saffron-soft);color:var(--saffron-ink)}
+
+/* comanda ticket */
+.ticket{position:relative;background:var(--surface);font-family:var(--f-mono);font-size:13px;padding:18px 18px 22px;border-radius:6px 6px 0 0;box-shadow:var(--shadow);margin-bottom:10px}
+.ticket::after{content:"";position:absolute;left:0;right:0;bottom:-9px;height:10px;background:radial-gradient(circle at 7px 0,var(--surface) 6.5px,transparent 7px) 0 0/14px 10px repeat-x}
+.ticket .tt{text-align:center;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.ticket .ts{text-align:center;color:var(--muted);font-size:12px}
+.ticket hr{border:0;border-top:1.5px dashed var(--line);margin:10px 0}
+.ticket .ln{display:flex;justify-content:space-between;gap:10px;padding:2px 0}
+.ticket .ln span:first-child{min-width:0}
+.ticket .ln.big{font-size:16px;font-weight:700}
+.ticket .ln.dim{color:var(--muted)}
+
+/* toasts */
+.toasts{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:max(16px,env(safe-area-inset-bottom,0px));z-index:30;display:grid;gap:8px;width:min(380px,calc(100% - 32px))}
+.toast{background:var(--ink);color:var(--bg);padding:12px 14px;border-radius:12px;box-shadow:var(--shadow);font-size:14px;animation:tin .25s ease-out}
+.toast.alert{background:var(--chili);color:#fff}
+@keyframes tin{from{transform:translateY(8px);opacity:.4}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.toast{animation:none}.tbl,.progress i{transition:none}}
+
+footer{border-top:1px solid var(--line);padding-block:18px 28px;font-size:13px;color:var(--muted)}
+footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="11" fill="var(--olive)"/><circle cx="20" cy="21" r="9.5" fill="none" stroke="var(--on-olive)" stroke-width="2.2"/><path d="M20 8.5c3 3.3 3.6 6 1.6 8.4-.8-1.6-2-2.2-3.4-2.5.5 1.7 0 3-1.3 4-1.2-3.4-.1-6.6 3.1-9.9z" fill="var(--saffron)"/><path d="M9 31h22" stroke="var(--on-olive)" stroke-width="2.2" stroke-linecap="round"/></svg>
+      <div><b>Mesa Lista</b><span id="brand-sub">Fogón 38 · Cocina colombiana</span></div>
+    </div>
+    <div class="row">
+      <button class="btn primary" data-act="new">+ Nueva reserva</button>
+    </div>
+  </div>
+</header>
+<nav class="nav" aria-label="Secciones"><div class="wrap"><div class="tabs" id="tabs"></div></div></nav>
+<main class="wrap" id="view"></main>
+<footer><div class="wrap">
+  <span>Prototipo con datos de ejemplo. Los cambios se guardan solo en este navegador.</span>
+  <button class="btn sm danger" data-act="reset" id="btn-reset">Restablecer datos de ejemplo</button>
+</div></footer>
+<div class="overlay" id="overlay" hidden><div class="modal" id="modal" role="dialog" aria-modal="true"></div></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+const KEY='mesalista.v1';
+const $=s=>document.querySelector(s);
+const pad=n=>String(n).padStart(2,'0');
+const isoDate=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const todayISO=()=>isoDate(new Date());
+const parseDT=(date,time)=>new Date(`${date}T${time}:00`);
+const toMin=t=>{const[h,m]=t.split(':').map(Number);return h*60+m};
+const DAYS=['dom','lun','mar','mié','jue','vie','sáb'];
+const DAYS_L=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+const MONTHS=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const MONTHS_L=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const dOf=iso=>new Date(iso+'T12:00:00');
+const fmtDay=iso=>{const d=dOf(iso);return `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`};
+const fmtLong=iso=>{const d=dOf(iso);return `${DAYS_L[d.getDay()]} ${d.getDate()} de ${MONTHS_L[d.getMonth()]}`};
+const COP=new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0});
+const money=n=>COP.format(Math.round(n||0));
+const pct=n=>`${Math.round(n*100)} %`;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const SLOTS=['12:00','12:30','13:00','13:30','14:00','14:30','15:00','18:30','19:00','19:30','20:00','20:30','21:00','21:30','22:00'];
+const OCCASIONS=['','Almuerzo familiar','Cumpleaños','Aniversario','Negocios','Evento empresarial','Primera cita','Despedida'];
+const STATUS={pendiente:'Pendiente',confirmada:'Confirmada',atendida:'Atendida',cancelada:'Cancelada'};
+const REM=[{k:'24',h:24,label:'24 h antes'},{k:'2',h:2,label:'2 h antes'}];
+
+function seed(){
+  const ING=[
+    ['res','Carne de res molida','kg',28000,'Carnes El Llano',2.5,2],
+    ['chicharron','Chicharrón (tocino)','kg',24000,'Carnes El Llano',2,2],
+    ['chorizo','Chorizo antioqueño','kg',22000,'Carnes El Llano',1.5,1],
+    ['pollo','Pechuga de pollo','kg',14000,'Carnes El Llano',4,3],
+    ['posta','Muchacho de res (posta)','kg',32000,'Carnes El Llano',1.2,1.5],
+    ['mojarra','Mojarra roja','und',9000,'Pescadería El Puerto',4,6],
+    ['frijol','Fríjol cargamanto','kg',9000,'Plaza de Paloquemao',3,2],
+    ['criolla','Papa criolla','kg',4500,'Plaza de Paloquemao',3,2],
+    ['sabanera','Papa sabanera','kg',2200,'Plaza de Paloquemao',5,3],
+    ['maduro','Plátano maduro','und',1200,'Plaza de Paloquemao',10,12],
+    ['verde','Plátano verde','und',1000,'Plaza de Paloquemao',14,10],
+    ['aguacate','Aguacate Hass','und',3000,'Plaza de Paloquemao',6,8],
+    ['mazorca','Mazorca','und',1800,'Plaza de Paloquemao',6,6],
+    ['guascas','Guascas','kg',20000,'Plaza de Paloquemao',.15,.1],
+    ['limon','Limón Tahití','kg',4000,'Plaza de Paloquemao',3,2],
+    ['tomate','Tomate chonto','kg',4000,'Plaza de Paloquemao',3,2],
+    ['cebolla','Cebolla larga','kg',3500,'Plaza de Paloquemao',2,1.5],
+    ['arroz','Arroz blanco','kg',4200,'Distribuidora Central',12,8],
+    ['huevo','Huevo AA','und',600,'Distribuidora Central',30,30],
+    ['arepa','Arepa de maíz','und',700,'Distribuidora Central',20,15],
+    ['crema','Crema de leche','l',14000,'Distribuidora Central',1,1],
+    ['alcaparras','Alcaparras','kg',40000,'Distribuidora Central',.3,.2],
+    ['panela','Panela','kg',5000,'Distribuidora Central',2,1.5],
+    ['coco','Leche de coco','l',12000,'Distribuidora Central',2,2],
+    ['aceite','Aceite vegetal','l',9000,'Distribuidora Central',6,4],
+    ['queso','Queso costeño / cuajada','kg',22000,'Lácteos San Pedro',1.5,1.5]
+  ].map(([id,name,unit,price,sup,stock,min])=>({id,name,unit,price,sup,stock,min}));
+  const dishes=[
+    {id:'bandeja',name:'Bandeja paisa',cat:'Plato fuerte',price:38000,recipe:[['frijol',.12],['arroz',.1],['res',.12],['chicharron',.15],['chorizo',.08],['huevo',1],['maduro',.5],['aguacate',.25],['arepa',1]]},
+    {id:'ajiaco',name:'Ajiaco santafereño',cat:'Plato fuerte',price:32000,recipe:[['pollo',.2],['criolla',.15],['sabanera',.15],['mazorca',.5],['guascas',.01],['crema',.04],['alcaparras',.01],['aguacate',.25],['arroz',.08]]},
+    {id:'posta',name:'Posta cartagenera',cat:'Plato fuerte',price:42000,recipe:[['posta',.25],['panela',.05],['cebolla',.05],['tomate',.05],['arroz',.1],['coco',.08],['maduro',.5]]},
+    {id:'mojarra',name:'Mojarra frita',cat:'Plato fuerte',price:34000,recipe:[['mojarra',1],['verde',1],['arroz',.1],['coco',.08],['limon',.05],['aceite',.15],['tomate',.05],['cebolla',.03]]},
+    {id:'sancocho',name:'Sancocho de gallina',cat:'Plato fuerte',price:30000,recipe:[['pollo',.25],['sabanera',.15],['verde',.5],['mazorca',.5],['arroz',.08],['aguacate',.25],['cebolla',.03]]},
+    {id:'patacon',name:'Patacones con hogao',cat:'Entrada',price:14000,recipe:[['verde',1.5],['tomate',.08],['cebolla',.05],['aceite',.1],['queso',.06]]},
+    {id:'limonada',name:'Limonada de coco',cat:'Bebida',price:12000,recipe:[['limon',.08],['coco',.12],['panela',.03]]},
+    {id:'cuajada',name:'Cuajada con melao',cat:'Postre',price:11000,recipe:[['queso',.12],['panela',.08]]}
+  ];
+  const tables=[
+    {id:'T1',name:'T1',seats:2,zone:'Salón',x:10,y:20},{id:'T2',name:'T2',seats:2,zone:'Salón',x:24,y:20},
+    {id:'T3',name:'T3',seats:4,zone:'Salón',x:41,y:20},{id:'T4',name:'T4',seats:4,zone:'Salón',x:11,y:49},
+    {id:'T5',name:'T5',seats:4,zone:'Salón',x:27,y:49},{id:'T6',name:'T6',seats:6,zone:'Salón',x:45,y:49},
+    {id:'T7',name:'T7',seats:8,zone:'Salón',x:16,y:80},{id:'P1',name:'Privado',seats:16,zone:'Salón',x:43,y:80},
+    {id:'T8',name:'T8',seats:2,zone:'Terraza',x:71,y:20},{id:'T9',name:'T9',seats:2,zone:'Terraza',x:88,y:20},
+    {id:'T10',name:'T10',seats:4,zone:'Terraza',x:71,y:49},{id:'T11',name:'T11',seats:4,zone:'Terraza',x:88,y:49},
+    {id:'T12',name:'T12',seats:6,zone:'Terraza',x:79.5,y:80}
+  ];
+  const now=new Date(),d=n=>isoDate(addDays(now,n));
+  const R=(id,name,phone,date,time,people,table,occasion,status,items,extra={})=>({id,name,phone,date,time,people,table,occasion,status,items,allergies:'',notes:'',deposit:0,rem:{},...extra});
+  const reservations=[
+    R('R-1041','Familia Restrepo','3104567821',d(0),'13:00',6,'T6','Almuerzo familiar','atendida',[['bandeja',3],['ajiaco',2],['patacon',2],['limonada',6]],{notes:'Silla para bebé',rem:{24:1,2:1}}),
+    R('R-1042','Camila Ortiz','3157789012',d(0),'19:30',2,'T8','Aniversario','confirmada',[['posta',1],['mojarra',1],['limonada',2],['cuajada',2]],{allergies:'Sin mariscos',notes:'Mesa con vista a la terraza, vela en el postre',rem:{24:1}}),
+    R('R-1043','Andrés Gómez','3001234567',d(0),'20:30',4,'T3','','pendiente',[['ajiaco',2],['bandeja',2],['patacon',1]]),
+    R('R-1044','Valentina Rojas','3209876543',d(1),'12:30',4,'T10','Negocios','confirmada',[['sancocho',2],['ajiaco',2],['limonada',4]]),
+    R('R-1045','Julián Mejía','3112223344',d(1),'20:00',8,'T7','Cumpleaños','pendiente',[['bandeja',4],['posta',2],['mojarra',2],['patacon',3],['limonada',8],['cuajada',8]],{deposit:100000,notes:'Traen torta. Servir a las 9:30 p. m.'}),
+    R('R-1046','Laura Pérez','3145556677',d(2),'19:00',2,'T1','','pendiente',[['mojarra',2],['limonada',2]]),
+    R('R-1047','Inversiones Andina S.A.S.','6017654321',d(3),'13:00',14,'P1','Evento empresarial','confirmada',[['bandeja',6],['ajiaco',4],['posta',4],['patacon',5],['limonada',14],['cuajada',14]],{deposit:300000,notes:'Factura electrónica a nombre de la empresa. Proyector.',allergies:'1 persona celíaca'}),
+    R('R-1048','Sofía Castaño','3018889900',d(4),'20:00',3,'T5','','pendiente',[['ajiaco',3]]),
+    R('R-1049','Mateo Herrera','3173334455',d(5),'12:30',6,'T12','Almuerzo familiar','pendiente',[['sancocho',4],['bandeja',2],['limonada',6]]),
+    R('R-1050','Daniela Vargas','3186667788',d(5),'21:00',2,'T9','Primera cita','pendiente',[['posta',1],['mojarra',1],['cuajada',2]]),
+    R('R-1051','Club Ciclista La Montaña','3051112233',d(6),'13:30',10,'P1','Despedida','pendiente',[['bandeja',10],['limonada',10],['patacon',4]]),
+    R('R-1052','Natalia Suárez','3129990011',d(8),'19:30',4,'T4','','pendiente',[])
+  ];
+  return {v:1,brand:{name:'Fogón 38'},ingredients:ING,dishes,tables,reservations,next:1053,shop:{bought:{},paid:{}},cfg:{merma:.1,keepMin:true}};
+}
+
+let S;
+function load(){try{const raw=localStorage.getItem(KEY);if(raw){const x=JSON.parse(raw);if(x&&x.v===1){S=x;return}}}catch(e){}S=seed()}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+const UI={view:'hoy',agendaDay:todayISO(),plDate:todayISO(),plSlot:new Date().getHours()>=15?'19:30':'13:00',shopDays:7};
+const ing=id=>S.ingredients.find(i=>i.id===id);
+const dish=id=>S.dishes.find(d=>d.id===id);
+const table=id=>S.tables.find(t=>t.id===id);
+const resv=id=>S.reservations.find(r=>r.id===id);
+const byTime=(a,b)=>(a.date+a.time).localeCompare(b.date+b.time);
+const dishCost=d=>d.recipe.reduce((s,[i,q])=>s+q*(ing(i)?.price||0),0);
+const fcClass=fc=>fc<.30?'ok':fc<.36?'warn':'bad';
+function quote(r){
+  const lines=(r.items||[]).filter(([d])=>dish(d)).map(([d,q])=>({d:dish(d),q,total:q*dish(d).price,cost:q*dishCost(dish(d))}));
+  const sub=lines.reduce((s,l)=>s+l.total,0),cost=lines.reduce((s,l)=>s+l.cost,0),inc=sub*.08;
+  return {lines,sub,cost,inc,total:sub+inc,tip:sub*.1,margin:sub-cost,fc:sub?cost/sub:0,due:Math.max(0,sub+inc-(r.deposit||0))};
+}
+function qf(q,unit){
+  if(unit==='und')return `${Math.round(q*10)/10} und`;
+  if(q<1)return `${Math.round(q*1000)} ${unit==='kg'?'g':'ml'}`;
+  return `${(Math.round(q*100)/100).toLocaleString('es-CO')} ${unit}`;
+}
+function upcoming(n){const a=todayISO(),b=isoDate(addDays(new Date(),n));return S.reservations.filter(r=>r.status!=='cancelada'&&r.date>=a&&r.date<b).sort(byTime)}
+function conflict(tid,date,time,except){return S.reservations.find(r=>r.id!==except&&r.table===tid&&r.date===date&&r.status!=='cancelada'&&Math.abs(toMin(r.time)-toMin(time))<120)}
+function relTime(ms){
+  const m=Math.round(ms/60000);if(m<60)return `${m} min`;
+  const h=Math.floor(m/60);if(h<24)return `${h} h ${m%60?(m%60)+' min':''}`.trim();
+  const d=Math.round(h/24);return `${d} ${d===1?'día':'días'}`;
+}
+function whenWord(iso){const t=todayISO();if(iso===t)return 'hoy';if(iso===isoDate(addDays(new Date(),1)))return 'mañana';return 'el '+fmtLong(iso)}
+
+/* reminders */
+function reminders(){
+  const now=Date.now(),out=[];
+  for(const r of S.reservations){
+    if(r.status==='cancelada'||r.status==='atendida')continue;
+    const dt=parseDT(r.date,r.time).getTime();if(dt<now)continue;
+    for(const R of REM){
+      const due=dt-R.h*3600e3,sent=r.rem?.[R.k];
+      out.push({r,R,due,st:sent?'enviado':now>=due?'ahora':'programado'});
+    }
+  }
+  return out.sort((a,b)=>a.due-b.due);
+}
+function remMsg(r){
+  const t=table(r.table);
+  return `Hola ${r.name}, te escribimos de ${S.brand.name}. Te esperamos ${whenWord(r.date)} a las ${r.time} para ${r.people} ${r.people===1?'persona':'personas'}${t?` (mesa ${t.name}, ${t.zone.toLowerCase()})`:''}. ¿Nos confirmas tu asistencia? Responde SÍ para confirmar o NO si necesitas cancelar.`;
+}
+function waLink(phone,text){const p=String(phone||'').replace(/\D/g,'');const n=p.length===10?'57'+p:p;return `https://wa.me/${n}?text=${encodeURIComponent(text)}`}
+
+/* shopping */
+function roundBuy(q,unit){if(q<=1e-9)return 0;return unit==='und'?Math.ceil(q-1e-9):Math.ceil(q*20-1e-9)/20}
+function shopping(days){
+  const a=todayISO(),b=isoDate(addDays(new Date(),days)),need={};
+  const resIn=S.reservations.filter(r=>r.status!=='cancelada'&&r.status!=='atendida'&&r.date>=a&&r.date<b);
+  for(const r of resIn)for(const[d,q]of r.items){const D=dish(d);if(D)for(const[i,qq]of D.recipe)need[i]=(need[i]||0)+q*qq}
+  const rows=S.ingredients.map(g=>{
+    const n=need[g.id]||0,target=n*(1+S.cfg.merma)+(S.cfg.keepMin?g.min:0);
+    const buy=roundBuy(Math.max(0,target-g.stock),g.unit);
+    return {g,need:n,buy,est:buy*g.price};
+  }).filter(x=>x.buy>0);
+  return {rows,resIn,total:rows.reduce((s,x)=>s+x.est,0)};
+}
+
+/* ---------- views ---------- */
+const VIEWS={
+  hoy:['Hoy',vHoy],salon:['Salón',vSalon],agenda:['Agenda',vAgenda],recordatorios:['Recordatorios',vRem],
+  presupuestos:['Presupuestos',vPres],compras:['Compras',vCompras],menu:['Menú y recetas',vMenu],inventario:['Inventario',vInv]
+};
+function badges(){
+  return {
+    recordatorios:reminders().filter(x=>x.st==='ahora').length,
+    inventario:S.ingredients.filter(g=>g.stock<g.min).length,
+    compras:shopping(3).rows.length
+  };
+}
+function renderTabs(){
+  const b=badges();
+  $('#tabs').innerHTML=Object.entries(VIEWS).map(([k,[l]])=>`<button class="tab ${UI.view===k?'on':''}" data-act="go" data-v="${k}" ${UI.view===k?'aria-current="page"':''}>${l}${b[k]?`<span class="badge">${b[k]}</span>`:''}</button>`).join('');
+}
+function render(){renderTabs();$('#view').innerHTML=VIEWS[UI.view][1]()}
+function go(v){UI.view=v;try{history.replaceState(null,'','#'+v)}catch(e){}render();window.scrollTo({top:0});
+  const on=document.querySelector('.tab.on');if(on)on.scrollIntoView({block:'nearest',inline:'nearest'})}
+
+function resItem(r,showDate){
+  const q=quote(r),t=table(r.table);
+  return `<button class="item" data-act="open" data-id="${r.id}">
+    <div class="time">${r.time}${showDate?`<small>${fmtDay(r.date)}</small>`:''}</div>
+    <div style="min-width:0"><div class="who">${esc(r.name)}</div>
+      <div class="meta"><span>${r.people} pers.</span><span>${t?esc(t.name)+' · '+t.zone:'Sin mesa'}</span>${r.occasion?`<span>${esc(r.occasion)}</span>`:''}${r.allergies?`<span class="tag alert">${esc(r.allergies)}</span>`:''}${!r.items.length?'<span class="tag">Sin pre-pedido</span>':''}</div></div>
+    <div class="right"><span class="pill p-${r.status}">${STATUS[r.status]}</span>${q.sub?`<span class="num" style="font-size:13px">${money(q.total)}</span>`:''}</div>
+  </button>`;
+}
+
+function vHoy(){
+  const t=todayISO(),todays=S.reservations.filter(r=>r.date===t&&r.status!=='cancelada').sort(byTime);
+  const ppl=todays.reduce((s,r)=>s+r.people,0),ventas=todays.reduce((s,r)=>s+quote(r).total,0);
+  const conf=todays.filter(r=>r.status!=='pendiente').length;
+  const wk=upcoming(7),wq=wk.map(quote),wsub=wq.reduce((s,q)=>s+q.sub,0),wcost=wq.reduce((s,q)=>s+q.cost,0);
+  const remNow=reminders().filter(x=>x.st==='ahora');
+  const low=S.ingredients.filter(g=>g.stock<g.min);
+  const shop=shopping(3);
+  const noPre=upcoming(14).filter(r=>!r.items.length&&r.status!=='atendida');
+  const pend=upcoming(3).filter(r=>r.status==='pendiente');
+  const next=upcoming(14).filter(r=>r.status!=='atendida'&&parseDT(r.date,r.time).getTime()>=Date.now()-90*60e3).slice(0,6);
+  const days=[...Array(14)].map((_,i)=>{const iso=isoDate(addDays(new Date(),i));const rs=S.reservations.filter(r=>r.date===iso&&r.status!=='cancelada');return {iso,p:rs.reduce((s,r)=>s+r.people,0)}});
+  const max=Math.max(...days.map(x=>x.p),1);
+  const alerts=[
+    remNow.length&&{c:'red',ic:remNow.length,t:`${remNow.length===1?'Un recordatorio listo':remNow.length+' recordatorios listos'} para enviar`,s:remNow.slice(0,2).map(x=>x.r.name).join(', ')+(remNow.length>2?'…':''),a:'recordatorios',b:'Enviar'},
+    pend.length&&{c:'amber',ic:pend.length,t:`Reservas sin confirmar en los próximos 3 días`,s:pend.slice(0,3).map(r=>r.name).join(', '),a:'recordatorios',b:'Revisar'},
+    shop.rows.length&&{c:'blue',ic:shop.rows.length,t:`Insumos por comprar para 3 días`,s:`Costo estimado ${money(shop.total)}`,a:'compras',b:'Ver lista'},
+    low.length&&{c:'red',ic:low.length,t:`Insumos bajo el mínimo`,s:low.slice(0,3).map(g=>g.name).join(', ')+(low.length>3?'…':''),a:'inventario',b:'Inventario'},
+    noPre.length&&{c:'amber',ic:noPre.length,t:`Reservas sin pre-pedido`,s:'Pide el menú por WhatsApp para calcular compras',a:'agenda',b:'Agenda'}
+  ].filter(Boolean);
+  return `
+  <div class="head"><div><div class="eyebrow">${fmtLong(t)}</div><h2>Así va el servicio de hoy</h2></div>
+    <div class="row"><button class="btn" data-act="go" data-v="salon">Ver salón</button><button class="btn" data-act="go" data-v="compras">Lista de compras</button></div></div>
+  <section class="kpis">
+    <div class="kpi hero"><span class="eyebrow">Reservas hoy</span><span class="v">${todays.length}</span><span class="s">${conf} confirmadas o atendidas</span></div>
+    <div class="kpi"><span class="eyebrow">Comensales</span><span class="v">${ppl}</span><span class="s">${todays.length?'Promedio '+(ppl/todays.length).toFixed(1)+' por mesa':'Sin reservas'}</span></div>
+    <div class="kpi"><span class="eyebrow">Ventas pre-pedidas</span><span class="v">${money(ventas)}</span><span class="s">Con impoconsumo 8 %</span></div>
+    <div class="kpi"><span class="eyebrow">Food cost 7 días</span><span class="v">${wsub?pct(wcost/wsub):'—'}</span><span class="s">Meta: menos de 32 %</span></div>
+  </section>
+  <section class="grid2">
+    <div class="panel"><h3>Próximas llegadas</h3>
+      <div class="list">${next.length?next.map(r=>resItem(r,r.date!==t)).join(''):'<div class="empty">No hay llegadas pendientes. Crea una reserva con el botón de arriba.</div>'}</div></div>
+    <div class="panel"><h3>Para hacer ahora</h3>
+      <div class="alerts">${alerts.length?alerts.map(a=>`<div class="alert ${a.c}"><div class="ic">${a.ic}</div><div style="min-width:0"><b>${a.t}</b><span>${esc(a.s)}</span></div><button class="btn sm" data-act="go" data-v="${a.a}">${a.b}</button></div>`).join(''):`<div class="alert green"><div class="ic">✓</div><div><b>Todo al día</b><span>No hay recordatorios ni compras pendientes.</span></div></div>`}</div></div>
+  </section>
+  <section class="panel"><div class="row" style="justify-content:space-between;margin-bottom:6px"><h3>Comensales reservados · próximos 14 días</h3><span class="muted" style="font-size:13px">Toca un día para ver su agenda</span></div>
+    <div class="bars">${days.map((x,i)=>`<button class="bar ${i===0?'today':''} ${x.p?'':'zero'}" style="height:${x.p?Math.max(4,x.p/max*100):1.5}%" data-act="day" data-d="${x.iso}" aria-label="${fmtDay(x.iso)}: ${x.p} comensales">${x.p?`<i>${x.p}</i>`:''}</button>`).join('')}</div>
+    <div class="bar-labels">${days.map(x=>{const d=dOf(x.iso);return `<span>${DAYS[d.getDay()]}<b>${d.getDate()}</b></span>`}).join('')}</div>
+  </section>`;
+}
+
+function vSalon(){
+  const date=UI.plDate,slot=UI.plSlot;
+  const W={2:8.5,4:10.5,6:14,8:17,16:24};
+  const cells=S.tables.map(t=>{
+    const r=conflict(t.id,date,slot,null);
+    const cls=r?(r.status==='atendida'?'served':'busy'):'';
+    const shape=t.seats<=4?'round':'rect';
+    return `<button class="tbl ${shape} ${cls}" style="left:${t.x}%;top:${t.y}%;width:${W[t.seats]}%" data-act="${r?'open':'newAt'}" data-id="${r?r.id:''}" data-t="${t.id}" aria-label="${t.name}, ${t.seats} puestos, ${r?'reservada por '+esc(r.name):'libre'}">
+      <b>${t.name}</b><small>${r?esc(r.name.split(' ')[0])+' '+r.time:t.seats+' puestos'}</small></button>`;
+  }).join('');
+  const dayRes=S.reservations.filter(r=>r.date===date&&r.status!=='cancelada').sort(byTime);
+  const freeSeats=S.tables.filter(t=>!conflict(t.id,date,slot,null)).reduce((s,t)=>s+t.seats,0);
+  const total=S.tables.reduce((s,t)=>s+t.seats,0);
+  return `
+  <div class="head"><div><div class="eyebrow">Plano del restaurante</div><h2>Salón y terraza</h2><p>Toca una mesa libre para reservarla o una ocupada para ver la reserva. Cada reserva bloquea la mesa 2 horas.</p></div>
+    <div class="row">
+      <div class="field"><label for="pl-date">Fecha</label><input type="date" id="pl-date" value="${date}"></div>
+      <div class="field"><label for="pl-slot">Hora</label><select id="pl-slot">${SLOTS.map(s=>`<option ${s===slot?'selected':''}>${s}</option>`).join('')}</select></div>
+    </div></div>
+  <div class="row" style="justify-content:space-between">
+    <div class="legend"><span><i style="border-color:var(--ok);background:var(--surface)"></i>Libre</span><span><i style="border-color:var(--saffron);background:var(--saffron-soft)"></i>Reservada</span><span><i style="border-color:var(--olive);background:var(--olive)"></i>Atendida</span></div>
+    <span class="num" style="font-size:13px">${freeSeats} de ${total} puestos libres · ${fmtDay(date)} ${slot}</span>
+  </div>
+  <div class="scroll-x"><div class="plan">
+    <div class="zone" style="left:2%;top:4%;width:57%;height:92%"><span>Salón</span></div>
+    <div class="zone" style="left:61%;top:4%;width:37%;height:92%"><span>Terraza</span></div>
+    ${cells}
+  </div></div>
+  <div class="panel"><h3>Reservas del ${fmtLong(date)}</h3><div class="list">${dayRes.length?dayRes.map(r=>resItem(r)).join(''):'<div class="empty">No hay reservas este día.</div>'}</div></div>`;
+}
+
+function vAgenda(){
+  const days=[...Array(14)].map((_,i)=>isoDate(addDays(new Date(),i)));
+  if(!days.includes(UI.agendaDay)&&UI.agendaDay<days[0])UI.agendaDay=days[0];
+  const sel=UI.agendaDay,list=S.reservations.filter(r=>r.date===sel).sort(byTime);
+  const lunch=list.filter(r=>toMin(r.time)<17*60),dinner=list.filter(r=>toMin(r.time)>=17*60);
+  const active=list.filter(r=>r.status!=='cancelada'),q=active.map(quote);
+  const sec=(t,a)=>`<div class="panel"><h3>${t} <span class="muted" style="font-weight:500;font-size:14px">· ${a.filter(r=>r.status!=='cancelada').reduce((s,r)=>s+r.people,0)} comensales</span></h3><div class="list">${a.length?a.map(r=>resItem(r)).join(''):'<div class="empty">Sin reservas en este turno.</div>'}</div></div>`;
+  return `
+  <div class="head"><div><div class="eyebrow">Agenda</div><h2>${fmtLong(sel).replace(/^./,c=>c.toUpperCase())}</h2><p>${active.length} reservas · ${active.reduce((s,r)=>s+r.people,0)} comensales · ventas pre-pedidas ${money(q.reduce((s,x)=>s+x.total,0))}</p></div>
+    <button class="btn primary" data-act="new" data-d="${sel}">+ Reserva para este día</button></div>
+  <div class="days">${days.map(iso=>{const d=dOf(iso);const rs=S.reservations.filter(r=>r.date===iso&&r.status!=='cancelada');
+    return `<button class="day ${iso===sel?'on':''}" data-act="day" data-d="${iso}"><span class="dn">${iso===todayISO()?'Hoy':DAYS[d.getDay()]}</span><span class="dd">${d.getDate()}</span><span class="dc">${rs.length?rs.reduce((s,r)=>s+r.people,0)+' pers.':'—'}</span><span class="dot ${rs.length?'':'none'}"></span></button>`}).join('')}</div>
+  <div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr))">${sec('Almuerzo',lunch)}${sec('Cena',dinner)}</div>`;
+}
+
+function vRem(){
+  const all=reminders(),now=all.filter(x=>x.st==='ahora'),prog=all.filter(x=>x.st==='programado'),sent=all.filter(x=>x.st==='enviado');
+  const row=x=>{const r=x.r,msg=remMsg(r);
+    const when=x.st==='ahora'?'AHORA':x.st==='enviado'?'ENVIADO':'en '+relTime(x.due-Date.now());
+    return `<div class="rem ${x.st==='ahora'?'now':x.st==='enviado'?'sent':''}">
+      <div class="when">${when}<div style="font-weight:500;font-size:11px;opacity:.85">${x.R.label}</div></div>
+      <div style="min-width:0"><div class="row" style="gap:8px"><b>${esc(r.name)}</b><span class="pill p-${r.status}">${STATUS[r.status]}</span></div>
+        <div class="muted" style="font-size:13px">${fmtDay(r.date)} · ${r.time} · ${r.people} pers. · <span class="mono">${esc(r.phone)}</span></div>
+        ${x.st!=='enviado'?`<div class="msg">${esc(msg)}</div>`:''}</div>
+      <div class="row acts" style="justify-content:flex-end">
+        ${x.st!=='enviado'?`<button class="btn sm" data-act="copyMsg" data-id="${r.id}">Copiar mensaje</button><a class="btn sm" href="${waLink(r.phone,msg)}" target="_blank" rel="noopener">WhatsApp ↗</a><button class="btn sm primary" data-act="sent" data-id="${r.id}" data-k="${x.R.k}">Marcar enviado</button>`:''}
+        ${r.status==='pendiente'&&x.st==='enviado'?`<button class="btn sm primary" data-act="confirm" data-id="${r.id}">Cliente confirmó</button>`:''}
+        ${x.st==='enviado'?`<button class="btn sm ghost" data-act="open" data-id="${r.id}">Ver reserva</button>`:''}
+      </div></div>`};
+  const block=(t,a,e)=>`<div class="panel"><h3>${t} <span class="muted" style="font-weight:500">(${a.length})</span></h3>${a.length?a.map(row).join(''):`<div class="empty">${e}</div>`}</div>`;
+  return `
+  <div class="head"><div><div class="eyebrow">Notificaciones</div><h2>Recordatorios a clientes</h2><p>Cada reserva programa dos recordatorios: 24 horas y 2 horas antes. Cuando llega la hora, la app te avisa aquí y en la pestaña. Copia el mensaje o ábrelo en WhatsApp y márcalo como enviado.</p></div></div>
+  ${block('Para enviar ahora',now,'No hay recordatorios pendientes por enviar.')}
+  ${block('Programados',prog,'No hay recordatorios programados.')}
+  ${block('Enviados',sent,'Todavía no has enviado recordatorios.')}`;
+}
+
+function vPres(){
+  const list=upcoming(14),qs=list.map(r=>({r,q:quote(r)}));
+  const sum=k=>qs.reduce((s,x)=>s+x.q[k],0),dep=list.reduce((s,r)=>s+(r.deposit||0),0);
+  const sub=sum('sub'),cost=sum('cost');
+  return `
+  <div class="head"><div><div class="eyebrow">Próximos 14 días</div><h2>Presupuesto por pedido</h2><p>Cada plato tiene su receta con gramos y precio de cada insumo, así que el costo real de cada reserva se calcula solo. Toca una fila para ver la cotización.</p></div></div>
+  <section class="kpis">
+    <div class="kpi hero"><span class="eyebrow">Ventas pre-pedidas</span><span class="v">${money(sum('total'))}</span><span class="s">${list.length} reservas</span></div>
+    <div class="kpi"><span class="eyebrow">Costo de insumos</span><span class="v">${money(cost)}</span><span class="s">Según recetas</span></div>
+    <div class="kpi"><span class="eyebrow">Margen bruto</span><span class="v">${money(sub-cost)}</span><span class="s">Food cost ${sub?pct(cost/sub):'—'}</span></div>
+    <div class="kpi"><span class="eyebrow">Anticipos recibidos</span><span class="v">${money(dep)}</span><span class="s">Saldo por cobrar ${money(sum('due'))}</span></div>
+  </section>
+  <div class="panel tw"><table>
+    <thead><tr><th>Fecha</th><th>Cliente</th><th class="n">Pers.</th><th class="n">Venta</th><th class="n">Costo</th><th class="n">Margen</th><th class="n">Food cost</th><th class="n">Anticipo</th></tr></thead>
+    <tbody>${qs.map(({r,q})=>`<tr class="click" data-act="open" data-id="${r.id}"><td style="white-space:nowrap"><span class="mono">${fmtDay(r.date)} ${r.time}</span></td><td><b>${esc(r.name)}</b><br><span class="pill p-${r.status}" style="margin-top:3px">${STATUS[r.status]}</span></td><td class="n">${r.people}</td>
+      <td class="n">${q.sub?money(q.sub):'<span class="tag">Sin pre-pedido</span>'}</td><td class="n">${q.sub?money(q.cost):'—'}</td><td class="n">${q.sub?money(q.margin):'—'}</td><td class="n">${q.sub?`<span class="fc ${fcClass(q.fc)}">${pct(q.fc)}</span>`:'—'}</td><td class="n">${r.deposit?money(r.deposit):'—'}</td></tr>`).join('')}</tbody>
+    <tfoot><tr><td colspan="3">Total</td><td class="n">${money(sub)}</td><td class="n">${money(cost)}</td><td class="n">${money(sub-cost)}</td><td class="n">${sub?pct(cost/sub):'—'}</td><td class="n">${money(dep)}</td></tr></tfoot>
+  </table></div>`;
+}
+
+function vCompras(){
+  const {rows,resIn,total}=shopping(UI.shopDays);
+  const groups={};rows.forEach(x=>(groups[x.g.sup]=groups[x.g.sup]||[]).push(x));
+  const bought=rows.filter(x=>S.shop.bought[x.g.id]).length;
+  return `
+  <div class="head"><div><div class="eyebrow">Compras inteligentes</div><h2>Lista de mercado</h2><p>Suma los pre-pedidos de las reservas, los multiplica por cada receta, agrega la merma y resta lo que ya tienes en inventario. Llévala en el celular, marca lo que compras y anota el precio real.</p></div></div>
+  <div class="panel" style="display:grid;gap:14px">
+    <div class="row" style="justify-content:space-between;gap:14px">
+      <div class="field"><label>Comprar para</label><div class="chips">${[3,7,14].map(n=>`<button class="chip ${UI.shopDays===n?'on':''}" data-act="days" data-n="${n}">${n} días</button>`).join('')}</div></div>
+      <div class="field"><label for="cfg-merma">Merma</label><select id="cfg-merma">${[0,.05,.1,.15].map(m=>`<option value="${m}" ${S.cfg.merma===m?'selected':''}>${pct(m)}</option>`).join('')}</select></div>
+      <label class="row" style="gap:8px;font-size:14px;font-weight:600"><input type="checkbox" id="cfg-min" ${S.cfg.keepMin?'checked':''} style="width:18px;height:18px;accent-color:var(--olive)"> Dejar stock mínimo</label>
+    </div>
+    <div class="kpis" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+      <div class="kpi hero"><span class="eyebrow">Costo estimado</span><span class="v">${money(total)}</span><span class="s">${rows.length} insumos</span></div>
+      <div class="kpi"><span class="eyebrow">Reservas cubiertas</span><span class="v">${resIn.length}</span><span class="s">${resIn.reduce((s,r)=>s+r.people,0)} comensales</span></div>
+      <div class="kpi"><span class="eyebrow">Comprado</span><span class="v" id="shop-count">${bought}/${rows.length}</span><div class="progress" style="margin-top:6px"><i id="shop-bar" style="width:${rows.length?bought/rows.length*100:0}%"></i></div></div>
+    </div>
+    <div class="row"><button class="btn" data-act="copyShop">Copiar lista completa</button><button class="btn primary" data-act="registerShop">Registrar compra en inventario</button></div>
+  </div>
+  ${rows.length?Object.entries(groups).map(([sup,xs])=>`<div class="panel sup">
+    <div class="sup-h"><h3>${esc(sup)}</h3><div class="row"><span class="num muted" style="font-size:13px">${money(xs.reduce((s,x)=>s+x.est,0))}</span><button class="btn sm" data-act="copySup" data-s="${esc(sup)}">Copiar pedido</button></div></div>
+    ${xs.map(x=>`<div class="buy ${S.shop.bought[x.g.id]?'done':''}" id="buy-${x.g.id}">
+      <input type="checkbox" data-buy="${x.g.id}" ${S.shop.bought[x.g.id]?'checked':''} aria-label="Comprado: ${esc(x.g.name)}">
+      <div style="min-width:0"><div class="nm">${esc(x.g.name)}</div><div class="sub">Necesitas ${qf(x.need,x.g.unit)} · tienes ${qf(x.g.stock,x.g.unit)} · mín. ${qf(x.g.min,x.g.unit)}</div></div>
+      <div class="q">${qf(x.buy,x.g.unit)}</div>
+      <div class="pp"><span class="num muted" style="font-size:12px">${money(x.est)} · ${money(x.g.price)}/${x.g.unit}</span><input type="number" min="0" step="100" id="paid-${x.g.id}" data-paid="${x.g.id}" placeholder="Precio real/${x.g.unit}" value="${S.shop.paid[x.g.id]||''}" aria-label="Precio pagado por ${x.g.unit} de ${esc(x.g.name)}"></div>
+    </div>`).join('')}</div>`).join(''):'<div class="empty">Con el inventario actual cubres todas las reservas de este periodo.</div>'}`;
+}
+
+function vMenu(){
+  return `
+  <div class="head"><div><div class="eyebrow">Ingeniería de menú</div><h2>Menú y recetas</h2><p>El costo de cada plato sale de su receta y del último precio pagado por cada insumo. Si el food cost pasa de 36 %, la app te sugiere un precio.</p></div></div>
+  <div class="dishes">${S.dishes.map(d=>{const c=dishCost(d),fc=c/d.price,sug=Math.ceil(c/.32/1000)*1000;
+    return `<article class="dish">
+      <div class="top2"><div><div class="eyebrow">${d.cat}</div><h3>${esc(d.name)}</h3></div><span class="fc ${fcClass(fc)}">${pct(fc)}</span></div>
+      <div class="figs"><div><span>Costo</span><b>${money(c)}</b></div><div><span>Margen</span><b>${money(d.price-c)}</b></div><div><span>Insumos</span><b>${d.recipe.length}</b></div></div>
+      <div class="price-in"><label for="price-${d.id}" class="muted" style="font-size:13px;font-weight:600">Precio de venta</label><input type="number" id="price-${d.id}" data-price="${d.id}" value="${d.price}" step="500" min="0"></div>
+      ${fcClass(fc)==='bad'?`<div class="hint">Food cost alto. Con ${money(sug)} quedas en 32 %.</div>`:''}
+      <div class="recipe">${d.recipe.map(([i,q])=>{const g=ing(i);return `<div><span>${esc(g.name)}</span><span>${qf(q,g.unit)} · ${money(q*g.price)}</span></div>`}).join('')}</div>
+    </article>`}).join('')}</div>`;
+}
+
+function vInv(){
+  const rows=[...S.ingredients].sort((a,b)=>(a.stock/a.min)-(b.stock/b.min));
+  const value=S.ingredients.reduce((s,g)=>s+g.stock*g.price,0),low=S.ingredients.filter(g=>g.stock<g.min).length;
+  return `
+  <div class="head"><div><div class="eyebrow">Bodega</div><h2>Inventario</h2><p>Se descuenta solo cuando marcas una reserva como atendida y sube cuando registras una compra. Puedes corregir el stock a mano después del conteo.</p></div></div>
+  <section class="kpis" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
+    <div class="kpi"><span class="eyebrow">Valor en bodega</span><span class="v">${money(value)}</span></div>
+    <div class="kpi"><span class="eyebrow">Bajo el mínimo</span><span class="v" style="color:${low?'var(--chili)':'inherit'}">${low}</span><span class="s">de ${S.ingredients.length} insumos</span></div>
+  </section>
+  <div class="panel tw"><table>
+    <thead><tr><th>Insumo</th><th>Proveedor</th><th class="n">Stock</th><th class="n">Mínimo</th><th>Nivel</th><th class="n">Precio</th></tr></thead>
+    <tbody>${rows.map(g=>{const ratio=Math.min(1,g.stock/(g.min*2));const isLow=g.stock<g.min;
+      return `<tr><td><b>${esc(g.name)}</b> ${isLow?'<span class="tag alert">Bajo mínimo</span>':''}</td><td class="muted">${esc(g.sup)}</td>
+      <td class="n"><input type="number" id="stk-${g.id}" data-stock="${g.id}" value="${Math.round(g.stock*100)/100}" step="${g.unit==='und'?1:.05}" min="0" aria-label="Stock de ${esc(g.name)} en ${g.unit}"> ${g.unit}</td>
+      <td class="n">${qf(g.min,g.unit)}</td><td><div class="meter ${isLow?'low':''}"><i style="width:${ratio*100}%"></i></div></td><td class="n">${money(g.price)}/${g.unit}</td></tr>`}).join('')}</tbody>
+  </table></div>`;
+}
+
+/* ---------- modal ---------- */
+function openModal(html){$('#modal').innerHTML=html;$('#overlay').hidden=false;document.body.style.overflow='hidden';setTimeout(()=>{const f=$('#modal').querySelector('input,button.x');f&&f.focus()},30)}
+function closeModal(){$('#overlay').hidden=true;$('#modal').innerHTML='';document.body.style.overflow='';F=null}
+
+function ticketHTML(r){
+  const q=quote(r);
+  if(!q.lines.length)return `<div class="callout amber">Esta reserva no tiene pre-pedido. Edítala para agregar platos y calcular el presupuesto.</div>`;
+  return `<div class="ticket">
+    <div class="tt">${esc(S.brand.name)} · Cotización</div><div class="ts">${r.id} · ${fmtDay(r.date)} · ${r.time} · ${r.people} pers.</div><hr>
+    ${q.lines.map(l=>`<div class="ln"><span>${l.q} × ${esc(l.d.name)}</span><span>${money(l.total)}</span></div>`).join('')}<hr>
+    <div class="ln"><span>Subtotal</span><span>${money(q.sub)}</span></div>
+    <div class="ln"><span>Impoconsumo 8 %</span><span>${money(q.inc)}</span></div>
+    <div class="ln big"><span>Total</span><span>${money(q.total)}</span></div>
+    ${r.deposit?`<div class="ln"><span>Anticipo</span><span>− ${money(r.deposit)}</span></div><div class="ln big"><span>Saldo</span><span>${money(q.due)}</span></div>`:''}
+    <div class="ln dim"><span>Propina sugerida 10 % (voluntaria)</span><span>${money(q.tip)}</span></div><hr>
+    <div class="ln dim"><span>Costo insumos (interno)</span><span>${money(q.cost)}</span></div>
+    <div class="ln dim"><span>Margen · food cost</span><span>${money(q.margin)} · ${pct(q.fc)}</span></div>
+  </div>`;
+}
+function quoteText(r){
+  const q=quote(r);
+  return [`${S.brand.name} · Cotización ${r.id}`,`${r.name} · ${fmtLong(r.date)} · ${r.time} · ${r.people} personas`,'',
+    ...q.lines.map(l=>`${l.q} × ${l.d.name}: ${money(l.total)}`),'',`Subtotal: ${money(q.sub)}`,`Impoconsumo 8 %: ${money(q.inc)}`,`Total: ${money(q.total)}`,
+    ...(r.deposit?[`Anticipo: ${money(r.deposit)}`,`Saldo: ${money(q.due)}`]:[]),`Propina sugerida 10 % (voluntaria): ${money(q.tip)}`].join('\n');
+}
+
+function openDetail(id){
+  const r=resv(id);if(!r)return;const t=table(r.table);
+  const rems=REM.map(R=>{const due=parseDT(r.date,r.time).getTime()-R.h*3600e3;const sent=r.rem?.[R.k];
+    const st=sent?'Enviado':r.status==='atendida'||r.status==='cancelada'?'No aplica':Date.now()>=due?'Listo para enviar':'Programado para '+fmtDay(isoDate(new Date(due)))+' '+pad(new Date(due).getHours())+':'+pad(new Date(due).getMinutes());
+    return `<div class="row" style="justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)"><span><b>${R.label}</b> · <span class="muted">${st}</span></span>${!sent&&r.status!=='atendida'&&r.status!=='cancelada'?`<button class="btn sm" data-act="sent" data-id="${r.id}" data-k="${R.k}">Marcar enviado</button>`:''}</div>`}).join('');
+  const acts=[];
+  if(r.status==='pendiente')acts.push(`<button class="btn primary" data-act="confirm" data-id="${r.id}">Confirmar</button>`);
+  if(r.status==='pendiente'||r.status==='confirmada')acts.push(`<button class="btn" data-act="serve" data-id="${r.id}">Marcar atendida</button>`,`<button class="btn danger" data-act="cancel" data-id="${r.id}">Cancelar reserva</button>`);
+  if(r.status==='cancelada')acts.push(`<button class="btn" data-act="reopen" data-id="${r.id}">Reactivar</button>`);
+  openModal(`
+    <div class="m-head"><div><div class="eyebrow">${r.id} · ${fmtLong(r.date)}</div><h2 style="font-size:24px">${esc(r.name)}</h2><div class="row" style="margin-top:6px"><span class="pill p-${r.status}">${STATUS[r.status]}</span>${r.occasion?`<span class="tag">${esc(r.occasion)}</span>`:''}</div></div><button class="x" data-act="close" aria-label="Cerrar">×</button></div>
+    <div class="m-body">
+      <div class="dl">
+        <div><span class="eyebrow">Hora</span><b class="mono">${r.time}</b></div>
+        <div><span class="eyebrow">Personas</span><b>${r.people}</b></div>
+        <div><span class="eyebrow">Mesa</span><b>${t?esc(t.name)+' · '+t.zone:'Sin mesa'}</b></div>
+        <div><span class="eyebrow">Teléfono</span><b class="mono" style="user-select:all">${esc(r.phone)||'—'}</b></div>
+      </div>
+      ${r.allergies?`<div class="callout red"><b>Alergias:</b> ${esc(r.allergies)}</div>`:''}
+      ${r.notes?`<div class="callout amber"><b>Notas:</b> ${esc(r.notes)}</div>`:''}
+      ${r.status==='atendida'?'<div class="muted" style="font-size:13px">Reserva atendida. Los insumos de su pedido ya se descontaron del inventario.</div>':''}
+      <div class="row">${acts.join('')}<button class="btn" data-act="edit" data-id="${r.id}">Editar</button></div>
+      <div><h3 style="margin-bottom:4px">Recordatorios</h3>${rems}</div>
+      <div><div class="row" style="justify-content:space-between;margin-bottom:10px"><h3>Presupuesto</h3>${r.items.length?`<button class="btn sm" data-act="copyQuote" data-id="${r.id}">Copiar cotización</button>`:''}</div>${ticketHTML(r)}</div>
+    </div>`);
+}
+
+let F=null;
+function openForm(r,preset={}){
+  F={id:r?.id||null,items:Object.fromEntries((r?.items||[]).map(([d,q])=>[d,q]))};
+  const v={name:'',phone:'',date:preset.date||todayISO(),time:preset.time||'19:30',people:2,table:preset.table||'',occasion:'',allergies:'',notes:'',deposit:0,...(r||{})};
+  if(preset.table&&!r)v.people=Math.min(table(preset.table).seats,Math.max(2,table(preset.table).seats-2));
+  openModal(`
+    <div class="m-head"><div><div class="eyebrow">${r?r.id:'Nueva reserva'}</div><h2 style="font-size:24px">${r?'Editar reserva':'Reservar mesa'}</h2></div><button class="x" data-act="close" aria-label="Cerrar">×</button></div>
+    <form class="m-body" id="rf" novalidate>
+      <div class="fgrid">
+        <div class="field"><label for="f-name">Nombre de quien reserva</label><input type="text" id="f-name" value="${esc(v.name)}" placeholder="Ej. Carolina Díaz" autocomplete="off"></div>
+        <div class="field"><label for="f-phone">Celular (WhatsApp)</label><input type="tel" id="f-phone" value="${esc(v.phone)}" placeholder="3001234567" autocomplete="off"></div>
+        <div class="field"><label for="f-date">Fecha</label><input type="date" id="f-date" value="${v.date}"></div>
+        <div class="field"><label for="f-time">Hora</label><select id="f-time">${SLOTS.map(s=>`<option ${s===v.time?'selected':''}>${s}</option>`).join('')}</select></div>
+        <div class="field"><label for="f-people">Personas</label><input type="number" id="f-people" min="1" max="40" value="${v.people}"></div>
+        <div class="field"><label for="f-table">Mesa</label><select id="f-table"></select></div>
+        <div class="field"><label for="f-occ">Ocasión</label><select id="f-occ">${OCCASIONS.map(o=>`<option value="${o}" ${o===v.occasion?'selected':''}>${o||'Ninguna'}</option>`).join('')}</select></div>
+        <div class="field"><label for="f-dep">Anticipo recibido (COP)</label><input type="number" id="f-dep" min="0" step="10000" value="${v.deposit||0}"></div>
+        <div class="field"><label for="f-all">Alergias o restricciones</label><input type="text" id="f-all" value="${esc(v.allergies)}" placeholder="Ej. sin lácteos"></div>
+        <div class="field"><label for="f-notes">Notas</label><input type="text" id="f-notes" value="${esc(v.notes)}" placeholder="Ej. traen torta"></div>
+      </div>
+      <div><h3>Pre-pedido</h3><p class="muted" style="font-size:13px;margin:2px 0 10px">Con el pre-pedido la app calcula el presupuesto y la lista de compras.</p><div class="steppers" id="f-items"></div></div>
+      <div class="summary" id="f-sum"></div>
+      <div id="f-err" class="err" hidden></div>
+      <div class="row" style="justify-content:flex-end"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary">${r?'Guardar cambios':'Guardar reserva'}</button></div>
+    </form>`);
+  fillTables(v.table);renderSteps();updSum();
+}
+function fillTables(sel){
+  const date=$('#f-date').value,time=$('#f-time').value,ppl=parseInt($('#f-people').value)||1;
+  $('#f-table').innerHTML=`<option value="">Asignar automáticamente</option>`+S.tables.map(t=>{const c=conflict(t.id,date,time,F.id);const small=t.seats<ppl;
+    return `<option value="${t.id}" ${t.id===sel?'selected':''}>${t.name} · ${t.seats} puestos · ${t.zone}${c?' · ocupada '+c.time:small?' · pequeña':''}</option>`}).join('');
+}
+function renderSteps(){
+  $('#f-items').innerHTML=S.dishes.map(d=>{const q=F.items[d.id]||0;return `<div class="step ${q?'has':''}"><div class="nm">${esc(d.name)}<small>${money(d.price)}</small></div><div class="ctl"><button type="button" data-act="dec" data-d="${d.id}" aria-label="Quitar ${esc(d.name)}">−</button><b>${q}</b><button type="button" data-act="inc" data-d="${d.id}" aria-label="Agregar ${esc(d.name)}">+</button></div></div>`}).join('');
+}
+function updSum(){
+  const q=quote({items:Object.entries(F.items).filter(([,n])=>n>0),deposit:parseFloat($('#f-dep').value)||0});
+  $('#f-sum').innerHTML=q.sub?`<span>Total <b>${money(q.total)}</b></span><span>Costo insumos <b>${money(q.cost)}</b></span><span>Margen <b>${money(q.margin)}</b></span><span>Food cost <b>${pct(q.fc)}</b></span>${q.due!==q.total?`<span>Saldo <b>${money(q.due)}</b></span>`:''}`:'<span>Agrega platos para ver el presupuesto.</span>';
+}
+function saveForm(e){
+  e.preventDefault();
+  const g=id=>$('#'+id).value.trim(),err=m=>{const el=$('#f-err');el.textContent=m;el.hidden=false;el.scrollIntoView({block:'nearest'})};
+  const name=g('f-name'),date=g('f-date'),time=g('f-time'),people=parseInt(g('f-people'))||0;
+  if(!name)return err('Escribe el nombre de quien reserva.');
+  if(!date)return err('Elige la fecha de la reserva.');
+  if(people<1)return err('La reserva necesita al menos 1 persona.');
+  let tid=g('f-table');
+  if(tid){const t=table(tid);if(t.seats<people)return err(`La mesa ${t.name} es para ${t.seats} personas. Elige una más grande o deja "Asignar automáticamente".`);
+    const c=conflict(tid,date,time,F.id);if(c)return err(`La mesa ${t.name} ya está reservada a las ${c.time} por ${c.name}. Elige otra mesa u otra hora.`)}
+  else{const free=S.tables.filter(t=>t.seats>=people&&!conflict(t.id,date,time,F.id)).sort((a,b)=>a.seats-b.seats)[0];
+    if(!free)return err(`No hay mesas libres para ${people} personas a las ${time}. Prueba otra hora.`);tid=free.id}
+  const data={name,phone:g('f-phone'),date,time,people,table:tid,occasion:g('f-occ'),allergies:g('f-all'),notes:g('f-notes'),deposit:parseFloat(g('f-dep'))||0,items:Object.entries(F.items).filter(([,q])=>q>0)};
+  let msg;
+  if(F.id){const r=resv(F.id);const moved=r.date!==date||r.time!==time;Object.assign(r,data);if(moved)r.rem={};msg=`Reserva ${r.id} actualizada${moved?'. Recordatorios reprogramados.':'.'}`}
+  else{const r={id:'R-'+(S.next++),status:'pendiente',rem:{},...data};S.reservations.push(r);msg=`Reserva ${r.id} guardada en ${table(tid).name}. Recordatorios programados 24 h y 2 h antes.`}
+  save();closeModal();UI.agendaDay=date;UI.plDate=date;render();toast(msg);
+}
+
+/* ---------- actions ---------- */
+function toast(m,kind){const el=document.createElement('div');el.className='toast '+(kind||'');el.textContent=m;$('#toasts').appendChild(el);setTimeout(()=>el.remove(),kind==='alert'?8000:4200)}
+function copy(text,label){
+  const ok=()=>toast(label||'Copiado');
+  try{navigator.clipboard.writeText(text).then(ok).catch(()=>fallback())}catch(e){fallback()}
+  function fallback(){openModal(`<div class="m-head"><h2 style="font-size:22px">Copia este texto</h2><button class="x" data-act="close" aria-label="Cerrar">×</button></div><div class="m-body"><textarea id="copy-area" rows="10">${esc(text)}</textarea></div>`);setTimeout(()=>{const a=$('#copy-area');a.focus();a.select()},40)}
+}
+function shopText(rows,sup){
+  const lines=rows.map(x=>`• ${x.g.name}: ${qf(x.buy,x.g.unit)}`);
+  return sup?`Hola, pedido para ${S.brand.name}:\n${lines.join('\n')}\nGracias.`:`Lista de mercado ${S.brand.name} (${UI.shopDays} días)\n\n`+Object.entries(rows.reduce((a,x)=>((a[x.g.sup]=a[x.g.sup]||[]).push(`• ${x.g.name}: ${qf(x.buy,x.g.unit)}`),a),{})).map(([s,l])=>`${s}\n${l.join('\n')}`).join('\n\n');
+}
+function consume(r,sign){for(const[d,q]of r.items){const D=dish(d);if(D)for(const[i,qq]of D.recipe){const g=ing(i);g.stock=Math.max(0,Math.round((g.stock-sign*q*qq)*1000)/1000)}}}
+function refreshModal(id){if(!$('#overlay').hidden)openDetail(id)}
+
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]');
+  if(!el){if(e.target.id==='overlay')closeModal();return}
+  const a=el.dataset.act,id=el.dataset.id;
+  switch(a){
+    case 'go':go(el.dataset.v);break;
+    case 'new':openForm(null,{date:el.dataset.d});break;
+    case 'newAt':openForm(null,{date:UI.plDate,time:UI.plSlot,table:el.dataset.t});break;
+    case 'open':openDetail(id);break;
+    case 'edit':openForm(resv(id));break;
+    case 'close':closeModal();break;
+    case 'day':UI.agendaDay=el.dataset.d;go('agenda');break;
+    case 'days':UI.shopDays=+el.dataset.n;render();break;
+    case 'inc':case 'dec':{const d=el.dataset.d;F.items[d]=Math.max(0,(F.items[d]||0)+(a==='inc'?1:-1));renderSteps();updSum();
+      const b=document.querySelector(`[data-act="${a}"][data-d="${d}"]`);b&&b.focus();break}
+    case 'confirm':{const r=resv(id);r.status='confirmada';save();render();refreshModal(id);toast(`${r.name}: reserva confirmada.`);break}
+    case 'serve':{const r=resv(id);consume(r,1);r.status='atendida';save();render();refreshModal(id);toast(`${r.name}: atendida. Insumos descontados del inventario.`);break}
+    case 'cancel':{if(!el.dataset.armed){el.dataset.armed='1';el.textContent='Toca otra vez para cancelar';setTimeout(()=>{if(el.isConnected){delete el.dataset.armed;el.textContent='Cancelar reserva'}},3500);break}
+      const r=resv(id);r.status='cancelada';save();render();refreshModal(id);toast(`Reserva de ${r.name} cancelada. La mesa quedó libre.`);break}
+    case 'reopen':{const r=resv(id);if(conflict(r.table,r.date,r.time,r.id)){toast('La mesa ya fue tomada por otra reserva. Edita la reserva y elige otra mesa.','alert');break}r.status='pendiente';save();render();refreshModal(id);break}
+    case 'sent':{const r=resv(id);r.rem=r.rem||{};r.rem[el.dataset.k]=1;save();render();refreshModal(id);toast(`Recordatorio a ${r.name} marcado como enviado.`);break}
+    case 'copyMsg':copy(remMsg(resv(id)),'Mensaje copiado. Pégalo en WhatsApp.');break;
+    case 'copyQuote':copy(quoteText(resv(id)),'Cotización copiada.');break;
+    case 'copyShop':{const {rows}=shopping(UI.shopDays);rows.length?copy(shopText(rows),'Lista copiada.'):toast('No hay nada por comprar.');break}
+    case 'copySup':{const rows=shopping(UI.shopDays).rows.filter(x=>x.g.sup===el.dataset.s);copy(shopText(rows,true),`Pedido para ${el.dataset.s} copiado.`);break}
+    case 'registerShop':{const {rows}=shopping(UI.shopDays),done=rows.filter(x=>S.shop.bought[x.g.id]);
+      if(!done.length){toast('Marca primero los insumos que compraste.');break}
+      let changed=0;for(const x of done){x.g.stock=Math.round((x.g.stock+x.buy)*1000)/1000;const p=parseFloat(S.shop.paid[x.g.id]);if(p>0&&p!==x.g.price){x.g.price=p;changed++}}
+      S.shop={bought:{},paid:{}};save();render();toast(`Compra registrada: ${done.length} insumos al inventario${changed?`, ${changed} precios actualizados en las recetas`:''}.`);break}
+    case 'reset':{if(!el.dataset.armed){el.dataset.armed='1';el.textContent='Toca otra vez para restablecer';setTimeout(()=>{if(el.isConnected){delete el.dataset.armed;el.textContent='Restablecer datos de ejemplo'}},3500);break}
+      delete el.dataset.armed;el.textContent='Restablecer datos de ejemplo';S=seed();save();announced.clear();render();toast('Datos de ejemplo restablecidos.');break}
+  }
+});
+document.addEventListener('change',e=>{
+  const el=e.target;
+  if(el.id==='pl-date'&&el.value){UI.plDate=el.value;render()}
+  else if(el.id==='pl-slot'){UI.plSlot=el.value;render()}
+  else if(el.id==='cfg-merma'){S.cfg.merma=parseFloat(el.value);save();render()}
+  else if(el.id==='cfg-min'){S.cfg.keepMin=el.checked;save();render()}
+  else if(el.dataset.price){const d=dish(el.dataset.price),v=parseFloat(el.value);if(v>0){d.price=v;save();render();toast(`Precio de ${d.name}: ${money(v)}`)}}
+  else if(el.dataset.stock){const g=ing(el.dataset.stock),v=parseFloat(el.value);if(v>=0){g.stock=v;save();render()}}
+  else if(el.dataset.buy){const id=el.dataset.buy;if(el.checked)S.shop.bought[id]=1;else delete S.shop.bought[id];save();
+    $('#buy-'+id)?.classList.toggle('done',el.checked);const rows=shopping(UI.shopDays).rows,b=rows.filter(x=>S.shop.bought[x.g.id]).length;
+    $('#shop-count').textContent=`${b}/${rows.length}`;$('#shop-bar').style.width=`${rows.length?b/rows.length*100:0}%`}
+  else if(el.dataset.paid){const v=parseFloat(el.value);if(v>0)S.shop.paid[el.dataset.paid]=v;else delete S.shop.paid[el.dataset.paid];save()}
+});
+document.addEventListener('input',e=>{
+  if(!F||!e.target.closest('#rf'))return;
+  const id=e.target.id;
+  if(id==='f-date'||id==='f-time'||id==='f-people'){fillTables($('#f-table').value)}
+  if(id==='f-dep')updSum();
+});
+document.addEventListener('submit',e=>{if(e.target.id==='rf')saveForm(e)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#overlay').hidden)closeModal()});
+
+/* reminder watcher: announces reminders as they come due */
+const announced=new Set();
+function watch(first){
+  for(const x of reminders()){if(x.st!=='ahora')continue;const k=x.r.id+':'+x.R.k;if(announced.has(k))continue;announced.add(k);
+    if(!first)toast(`Hora de enviar el recordatorio (${x.R.label}) a ${x.r.name}.`,'alert')}
+  renderTabs();
+}
+
+load();
+const h=(location.hash||'').slice(1);if(VIEWS[h])UI.view=h;
+render();watch(true);
+const due=reminders().filter(x=>x.st==='ahora').length;
+if(due)setTimeout(()=>toast(`Tienes ${due} ${due===1?'recordatorio listo':'recordatorios listos'} para enviar. Míralos en Recordatorios.`,'alert'),600);
+setInterval(()=>watch(false),30000);
+</script>
